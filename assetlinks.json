@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.ephemeral_hotteok_9459e0.twa",
+        "sha256_cert_fingerprints": ["81:37:F0:6D:E0:D9:F7:1C:BA:50:B6:E4:4D:90:47:2B:52:F6:D7:91:55:64:C1:C3:21:F8:5D:55:53:0A:B0:A7"]
+      }
+    }]
