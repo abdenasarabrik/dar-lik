@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دار ليك</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#FF6B35"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="دار ليك"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; font-family: 'Cairo', sans-serif; }
+    input::placeholder { color: #8B9BB4; }
+    ::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const C = {
+      primary: "#FF6B35", secondary: "#1A1A2E", accent: "#E8C547",
+      surface: "#16213E", card: "#0F3460", text: "#F5F5F5",
+      muted: "#8B9BB4", success: "#4ECDC4", danger: "#FF4757",
+    };
+
+    const listings = [
+      { id:1, title:"شقة مودرن في الدار البيضاء", price:4500, location:"مارتيل، طنجة", rooms:3, area:85, type:"كراء", img:"🏙️", rating:4.8, owner:"محمد أمين", verified:true, tags:["مفروشة","موقف سيارات","حديقة"] },
+      { id:2, title:"فيلا فاخرة مع مسبح", price:15000, location:"أكدال، الرباط", rooms:5, area:250, type:"كراء", img:"🏡", rating:4.9, owner:"سارة بنعلي", verified:true, tags:["مسبح","حارس","تكييف"] },
+      { id:3, title:"ستوديو قرب البحر", price:2800, location:"الكورنيش، الدار البيضاء", rooms:1, area:45, type:"كراء", img:"🌊", rating:4.5, owner:"يوسف الأمين", verified:false, tags:["إطلالة بحر","مفروشة"] },
+      { id:4, title:"طاولة عشاء خشبية", price:1200, location:"فاس", rooms:null, area:null, type:"بيع", img:"🪑", rating:4.2, owner:"فاطمة الزهراء", verified:true, tags:["حالة ممتازة","خشب طبيعي"] },
+      { id:5, title:"مكيف دايكن 18000", price:3500, location:"مراكش", rooms:null, area:null, type:"بيع", img:"❄️", rating:4.6, owner:"عبد الله قاسم", verified:true, tags:["كسب مرة","مع تركيب"] },
+    ];
+
+    const msgs = [
+      { id:1, sender:"محمد أمين", msg:"الشقة لا زالت متاحة؟", time:"10:30", unread:2 },
+      { id:2, sender:"سارة بنعلي", msg:"متى يمكن الزيارة؟", time:"أمس", unread:0 },
+      { id:3, sender:"يوسف الأمين", msg:"السعر قابل للتفاوض", time:"الاثنين", unread:1 },
+    ];
+
+    const chat = [
+      { from:"other", text:"السلام عليكم، الشقة لا زالت متاحة؟", time:"10:28" },
+      { from:"me", text:"وعليكم السلام، نعم لا زالت متاحة", time:"10:29" },
+      { from:"other", text:"شحال الكراء ديال الشهر؟", time:"10:30" },
+      { from:"me", text:"4500 درهم في الشهر، شامل الماء والكهرباء", time:"10:31" },
+      { from:"other", text:"زوين، فين نقدر نشوفها؟", time:"10:32" },
+    ];
+
+    const plans = [
+      { id:"boost", name:"إعلان مميز 🚀", price:75, duration:"7 أيام", desc:"إعلانك يطلع فوق الكل", features:["أول في نتائج البحث","شارة مميزة","إحصائيات المشاهدات"], color:"#FF6B35" },
+      { id:"pro", name:"اشتراك Pro 👑", price:150, duration:"شهر كامل", desc:"للمكريين المحترفين", features:["إعلانات غير محدودة","شارة موثق","دعم أولوية","إحصائيات متقدمة"], color:"#E8C547", popular:true },
+      { id:"annual", name:"اشتراك سنوي 💎", price:999, duration:"سنة كاملة", desc:"وفر 40% مقارنة بالشهري", features:["كل مميزات Pro","إعلانات مميزة x12","أولوية قصوى","مدير حساب خاص"], color:"#4ECDC4" },
+    ];
+
+    function App() {
+      const [tab, setTab] = useState("home");
+      const [filter, setFilter] = useState("الكل");
+      const [listing, setListing] = useState(null);
+      const [selChat, setSelChat] = useState(null);
+      const [saved, setSaved] = useState([1,2]);
+      const [search, setSearch] = useState("");
+      const [maxPrice, setMaxPrice] = useState(20000);
+      const [showFilters, setShowFilters] = useState(false);
+      const [showPay, setShowPay] = useState(false);
+      const [plan, setPlan] = useState(null);
+      const [step, setStep] = useState("plans");
+      const [card, setCard] = useState({ number:"", name:"", expiry:"", cvv:"" });
+      const [processing, setProcessing] = useState(false);
+      const [chatInput, setChatInput] = useState("");
+      const [listingType, setListingType] = useState("كراء");
+
+      const toggleSave = (id) => setSaved(p => p.includes(id) ? p.filter(i=>i!==id) : [...p,id]);
+
+      const filtered = listings.filter(l => {
+        const mf = filter==="الكل" || l.type===filter || (filter==="مفروشة" && l.tags.includes("مفروشة"));
+        const ms = !search || l.title.includes(search) || l.location.includes(search);
+        return mf && ms && l.price <= maxPrice;
+      });
+
+      // DETAIL
+      if (listing) return (
+        <Frame>
+          <div style={{background:C.secondary,minHeight:"100%",color:C.text,direction:"rtl"}}>
+            <div style={{background:`linear-gradient(135deg,${C.card},${C.surface})`,height:200,display:"flex",alignItems:"center",justifyContent:"center",fontSize:80,position:"relative"}}>
+              {listing.img}
+              <button onClick={()=>setListing(null)} style={{position:"absolute",top:14,right:14,background:"rgba(0,0,0,0.5)",border:"none",color:"#fff",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:16}}>←</button>
+              <button onClick={()=>toggleSave(listing.id)} style={{position:"absolute",top:14,left:14,background:"rgba(0,0,0,0.5)",border:"none",color:saved.includes(listing.id)?C.danger:"#fff",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:16}}>♥</button>
+            </div>
+            <div style={{padding:"18px 16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:800,fontSize:17}}>{listing.title}</div>
+                  <div style={{color:C.muted,fontSize:12,marginTop:3}}>📍 {listing.location}</div>
+                </div>
+                <div style={{textAlign:"left"}}>
+                  <div style={{color:C.primary,fontWeight:800,fontSize:19}}>{listing.price.toLocaleString()} درهم</div>
+                  <div style={{color:C.muted,fontSize:10}}>/ شهر</div>
+                </div>
+              </div>
+              {listing.rooms && (
+                <div style={{display:"flex",gap:10,marginBottom:14}}>
+                  {[["🛏",`${listing.rooms} غرف`],["📐",`${listing.area} م²`],["⭐",listing.rating]].map(([ic,v])=>(
+                    <div key={v} style={{flex:1,background:C.surface,borderRadius:10,padding:"9px 6px",textAlign:"center"}}>
+                      <div style={{fontSize:18}}>{ic}</div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:3}}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>
+                {listing.tags.map(t=><span key={t} style={{background:C.card,color:C.accent,borderRadius:20,padding:"3px 11px",fontSize:11}}>{t}</span>)}
+              </div>
+              <div style={{background:C.surface,borderRadius:14,padding:13,display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
+                <div style={{width:42,height:42,borderRadius:"50%",background:`linear-gradient(135deg,${C.primary},${C.accent})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>👤</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:13}}>{listing.owner}</div>
+                  <div style={{color:C.muted,fontSize:11}}>{listing.verified?"✅ موثق":"غير موثق"}</div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:9}}>
+                <button onClick={()=>{setListing(null);setTab("messages");setSelChat(msgs[0]);}} style={{flex:1,background:`linear-gradient(135deg,${C.primary},#ff8c5a)`,border:"none",color:"#fff",borderRadius:13,padding:13,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Cairo,sans-serif"}}>💬 تواصل مع المالك</button>
+                <button style={{background:C.surface,border:`1px solid ${C.muted}`,color:C.text,borderRadius:13,padding:"13px 14px",fontSize:17,cursor:"pointer"}}>📞</button>
+              </div>
+            </div>
+          </div>
+        </Frame>
+      );
+
+      // CHAT
+      if (selChat) return (
+        <Frame>
+          <div style={{background:C.secondary,height:"100%",color:C.text,direction:"rtl",display:"flex",flexDirection:"column"}}>
+            <div style={{background:C.surface,padding:"11px 15px",display:"flex",alignItems:"center",gap:11}}>
+              <button onClick={()=>setSelChat(null)} style={{background:"none",border:"none",color:C.text,fontSize:19,cursor:"pointer"}}>←</button>
+              <div style={{width:36,height:36,borderRadius:"50%",background:`linear-gradient(135deg,${C.primary},${C.accent})`,display:"flex",alignItems:"center",justifyContent:"center"}}>👤</div>
+              <div>
+                <div style={{fontWeight:700,fontSize:13}}>{selChat.sender}</div>
+                <div style={{color:C.success,fontSize:11}}>● متصل الآن</div>
+              </div>
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:14,display:"flex",flexDirection:"column",gap:9}}>
+              {chat.map((m,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:m.from==="me"?"flex-start":"flex-end"}}>
+                  <div style={{maxWidth:"75%",background:m.from==="me"?`linear-gradient(135deg,${C.primary},#ff8c5a)`:C.card,borderRadius:m.from==="me"?"17px 17px 4px 17px":"17px 17px 17px 4px",padding:"9px 13px"}}>
+                    <div style={{fontSize:12}}>{m.text}</div>
+                    <div style={{fontSize:9,color:"rgba(255,255,255,0.5)",marginTop:3,textAlign:m.from==="me"?"left":"right"}}>{m.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:"11px 14px",background:C.surface,display:"flex",gap:9,alignItems:"center"}}>
+              <input value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder="اكتب رسالة..." style={{flex:1,background:C.card,border:"none",borderRadius:21,padding:"9px 15px",color:C.text,fontSize:12,fontFamily:"Cairo,sans-serif",outline:"none"}}/>
+              <button style={{background:`linear-gradient(135deg,${C.primary},#ff8c5a)`,border:"none",borderRadius:"50%",width:38,height:38,cursor:"pointer",fontSize:17}}>➤</button>
+            </div>
+          </div>
+        </Frame>
+      );
+
+      return (
+        <Frame>
+          <div style={{background:C.secondary,minHeight:"100%",color:C.text,direction:"rtl",display:"flex",flexDirection:"column"}}>
+
+            {/* HOME */}
+            {tab==="home" && (
+              <div style={{flex:1,overflowY:"auto",paddingBottom:70}}>
+                <div style={{background:`linear-gradient(135deg,${C.surface},${C.card})`,padding:"18px 15px 14px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                    <div>
+                      <div style={{color:C.muted,fontSize:11}}>مرحباً 👋</div>
+                      <div style={{fontWeight:800,fontSize:19}}>دار <span style={{color:C.primary}}>ليك</span></div>
+                    </div>
+                    <div style={{width:38,height:38,borderRadius:"50%",background:`linear-gradient(135deg,${C.primary},${C.accent})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19}}>👤</div>
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <div style={{flex:1,background:C.secondary,borderRadius:11,padding:"9px 13px",display:"flex",alignItems:"center",gap:7}}>
+                      <span>🔍</span>
+                      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث عن شقة أو منزل..." style={{background:"none",border:"none",color:C.text,flex:1,fontSize:12,fontFamily:"Cairo,sans-serif",outline:"none"}}/>
+                    </div>
+                    <button onClick={()=>setShowFilters(!showFilters)} style={{background:C.primary,border:"none",borderRadius:11,padding:"0 13px",color:"#fff",cursor:"pointer",fontSize:17}}>⚙</button>
+                  </div>
+                  {showFilters && (
+                    <div style={{marginTop:10,background:C.secondary,borderRadius:11,padding:11}}>
+                      <div style={{fontSize:11,color:C.muted,marginBottom:7}}>السعر الأقصى: {maxPrice.toLocaleString()} درهم</div>
+                      <input type="range" min={0} max={20000} value={maxPrice} onChange={e=>setMaxPrice(Number(e.target.value))} style={{width:"100%",accentColor:C.primary}}/>
+                    </div>
+                  )}
+                </div>
+                <div style={{display:"flex",gap:7,padding:"11px 15px",overflowX:"auto"}}>
+                  {["الكل","كراء","بيع","مفروشة"].map(f=>(
+                    <button key={f} onClick={()=>setFilter(f)} style={{background:filter===f?C.primary:C.surface,border:"none",color:filter===f?"#fff":C.muted,borderRadius:19,padding:"5px 15px",fontSize:11,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"Cairo,sans-serif"}}>{f}</button>
+                  ))}
+                </div>
+                <div style={{padding:"0 15px 7px"}}>
+                  <div style={{fontWeight:700,marginBottom:11,fontSize:14}}>🔥 إعلانات مميزة</div>
+                  <div style={{display:"flex",gap:11,overflowX:"auto",paddingBottom:4}}>
+                    {filtered.slice(0,3).map(l=>(
+                      <div key={l.id} onClick={()=>setListing(l)} style={{minWidth:170,background:`linear-gradient(135deg,${C.card},${C.surface})`,borderRadius:15,overflow:"hidden",cursor:"pointer",flexShrink:0,border:"1px solid rgba(255,255,255,0.06)"}}>
+                        <div style={{height:95,display:"flex",alignItems:"center",justifyContent:"center",fontSize:46,background:`linear-gradient(135deg,${C.surface},${C.card})`,position:"relative"}}>
+                          {l.img}
+                          <span style={{position:"absolute",top:7,left:7,background:l.type==="كراء"?C.primary:C.accent,color:l.type==="كراء"?"#fff":"#000",fontSize:9,borderRadius:19,padding:"2px 7px"}}>{l.type}</span>
+                        </div>
+                        <div style={{padding:"9px 11px"}}>
+                          <div style={{fontWeight:700,fontSize:11,marginBottom:3}}>{l.title}</div>
+                          <div style={{color:C.muted,fontSize:10}}>📍 {l.location}</div>
+                          <div style={{color:C.primary,fontWeight:800,marginTop:5,fontSize:13}}>{l.price.toLocaleString()} <span style={{fontSize:9,color:C.muted}}>درهم/شهر</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{padding:"7px 15px"}}>
+                  <div style={{fontWeight:700,marginBottom:11,fontSize:14}}>📋 كل الإعلانات ({filtered.length})</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:11}}>
+                    {filtered.map(l=>(
+                      <div key={l.id} onClick={()=>setListing(l)} style={{background:C.surface,borderRadius:15,display:"flex",gap:11,padding:11,cursor:"pointer",border:"1px solid rgba(255,255,255,0.05)"}}>
+                        <div style={{width:66,height:66,borderRadius:11,background:`linear-gradient(135deg,${C.card},${C.secondary})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:29,flexShrink:0}}>{l.img}</div>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>{l.title}</div>
+                          <div style={{color:C.muted,fontSize:10,marginBottom:3}}>📍 {l.location}</div>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <div style={{color:C.primary,fontWeight:800,fontSize:14}}>{l.price.toLocaleString()} <span style={{fontSize:9,color:C.muted}}>درهم</span></div>
+                            <button onClick={e=>{e.stopPropagation();toggleSave(l.id);}} style={{background:"none",border:"none",color:saved.includes(l.id)?C.danger:C.muted,cursor:"pointer",fontSize:17}}>♥</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MESSAGES */}
+            {tab==="messages" && (
+              <div style={{flex:1,overflowY:"auto",paddingBottom:70,padding:"18px 15px 70px"}}>
+                <div style={{fontWeight:800,fontSize:19,marginBottom:15}}>💬 الرسائل</div>
+                {msgs.map(m=>(
+                  <div key={m.id} onClick={()=>setSelChat(m)} style={{display:"flex",gap:11,padding:"11px 0",borderBottom:"1px solid rgba(255,255,255,0.06)",cursor:"pointer",alignItems:"center"}}>
+                    <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${C.primary},${C.accent})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:21,position:"relative",flexShrink:0}}>
+                      👤
+                      {m.unread>0 && <div style={{position:"absolute",top:0,right:0,width:17,height:17,background:C.danger,borderRadius:"50%",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",border:`2px solid ${C.secondary}`}}>{m.unread}</div>}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",justifyContent:"space-between"}}>
+                        <div style={{fontWeight:700,fontSize:13}}>{m.sender}</div>
+                        <div style={{color:C.muted,fontSize:10}}>{m.time}</div>
+                      </div>
+                      <div style={{color:C.muted,fontSize:11,marginTop:2}}>{m.msg}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ADD */}
+            {tab==="add" && (
+              <div style={{flex:1,overflowY:"auto",paddingBottom:70,padding:"18px 15px"}}>
+                <div style={{fontWeight:800,fontSize:19,marginBottom:18}}>➕ نشر إعلان</div>
+                {[["📝","عنوان الإعلان","text","مثال: شقة 3 غرف في الرباط"],["📍","الموقع","text","المدينة والحي"],["💰","السعر (درهم)","number","مثال: 4500"],["📐","المساحة (م²)","number","مثال: 85"]].map(([ic,lb,tp,ph])=>(
+                  <div key={lb} style={{marginBottom:13}}>
+                    <label style={{fontSize:12,color:C.muted,display:"block",marginBottom:5}}>{ic} {lb}</label>
+                    <input type={tp} placeholder={ph} style={{width:"100%",background:C.surface,border:"1px solid rgba(255,255,255,0.1)",borderRadius:11,padding:"11px 13px",color:C.text,fontSize:12,fontFamily:"Cairo,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                ))}
+                <div style={{marginBottom:13}}>
+                  <label style={{fontSize:12,color:C.muted,display:"block",marginBottom:5}}>🏷️ نوع الإعلان</label>
+                  <div style={{display:"flex",gap:9}}>
+                    {["كراء","بيع"].map(t=>(
+                      <button key={t} onClick={()=>setListingType(t)} style={{flex:1,background:listingType===t?C.primary:C.surface,border:"none",color:"#fff",borderRadius:11,padding:11,fontSize:13,cursor:"pointer",fontFamily:"Cairo,sans-serif"}}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{marginBottom:18}}>
+                  <label style={{fontSize:12,color:C.muted,display:"block",marginBottom:5}}>🖼️ الصور</label>
+                  <div style={{background:C.surface,border:"2px dashed rgba(255,255,255,0.2)",borderRadius:11,padding:27,textAlign:"center",color:C.muted}}>
+                    <div style={{fontSize:29,marginBottom:7}}>📷</div>
+                    <div style={{fontSize:12}}>اضغط لإضافة صور</div>
+                  </div>
+                </div>
+                <button style={{width:"100%",background:`linear-gradient(135deg,${C.primary},#ff8c5a)`,border:"none",color:"#fff",borderRadius:13,padding:15,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"Cairo,sans-serif"}}>🚀 نشر الإعلان</button>
+                <button onClick={()=>setShowPay(true)} style={{width:"100%",marginTop:9,background:C.surface,border:`1px solid ${C.accent}`,color:C.accent,borderRadius:13,padding:13,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Cairo,sans-serif"}}>⚡ نشر كإعلان مميز (+75 درهم)</button>
+              </div>
+            )}
+
+            {/* SAVED */}
+            {tab==="saved" && (
+              <div style={{flex:1,overflowY:"auto",paddingBottom:70,padding:"18px 15px"}}>
+                <div style={{fontWeight:800,fontSize:19,marginBottom:15}}>❤️ المحفوظة</div>
+                <div style={{display:"flex",flexDirection:"column",gap:11}}>
+                  {listings.filter(l=>saved.includes(l.id)).map(l=>(
+                    <div key={l.id} onClick={()=>setListing(l)} style={{background:C.surface,borderRadius:15,display:"flex",gap:11,padding:11,cursor:"pointer"}}>
+                      <div style={{width:66,height:66,borderRadius:11,background:C.card,display:"flex",alignItems:"center",justifyContent:"center",fontSize:29,flexShrink:0}}>{l.img}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:12,marginBottom:2}}>{l.title}</div>
+                        <div style={{color:C.muted,fontSize:10,marginBottom:3}}>📍 {l.location}</div>
+                        <div style={{color:C.primary,fontWeight:800,fontSize:14}}>{l.price.toLocaleString()} درهم</div>
+                      </div>
+                    </div>
+                  ))}
+                  {saved.length===0 && <div style={{textAlign:"center",color:C.muted,marginTop:55}}>ما عندكش إعلانات محفوظة</div>}
+                </div>
+              </div>
+            )}
+
+            {/* PROFILE */}
+            {tab==="profile" && (
+              <div style={{flex:1,overflowY:"auto",paddingBottom:70}}>
+                <div style={{background:`linear-gradient(135deg,${C.surface},${C.card})`,padding:"28px 15px 18px",textAlign:"center"}}>
+                  <div style={{width:76,height:76,borderRadius:"50%",background:`linear-gradient(135deg,${C.primary},${C.accent})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,margin:"0 auto 11px"}}>👤</div>
+                  <div style={{fontWeight:800,fontSize:17}}>محمد أمين</div>
+                  <div style={{color:C.muted,fontSize:12}}>+212 6 00 00 00 00</div>
+                  <div style={{color:C.success,fontSize:11,marginTop:3}}>✅ موثق</div>
+                </div>
+                <div style={{padding:"15px"}}>
+                  <div onClick={()=>setShowPay(true)} style={{background:`linear-gradient(135deg,${C.primary},${C.accent}88)`,borderRadius:15,padding:"13px 15px",marginBottom:15,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{fontWeight:800,fontSize:13}}>👑 ترقية للـ Premium</div>
+                      <div style={{fontSize:10,opacity:0.8,marginTop:2}}>من 75 درهم فقط</div>
+                    </div>
+                    <div style={{background:"rgba(255,255,255,0.2)",borderRadius:19,padding:"5px 13px",fontSize:11,fontWeight:700}}>اشترك</div>
+                  </div>
+                  {[["📋","إعلاناتي","3"],["❤️","المحفوظة",saved.length],["💬","الرسائل","3"],["⚙️","الإعدادات",""],["🔒","الخصوصية",""],["🚪","تسجيل الخروج",""]].map(([ic,lb,cnt])=>(
+                    <div key={lb} style={{display:"flex",alignItems:"center",padding:"13px 0",borderBottom:"1px solid rgba(255,255,255,0.06)",cursor:"pointer"}}>
+                      <span style={{fontSize:19,marginLeft:11}}>{ic}</span>
+                      <span style={{flex:1,fontSize:13}}>{lb}</span>
+                      {cnt!=="" && <span style={{background:C.primary,color:"#fff",borderRadius:19,padding:"2px 9px",fontSize:11}}>{cnt}</span>}
+                      <span style={{color:C.muted,marginRight:3}}>›</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PAYMENT MODAL */}
+            {showPay && (
+              <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+                <div style={{width:"100%",maxWidth:390,background:C.secondary,borderRadius:"26px 26px 0 0",maxHeight:"90vh",overflowY:"auto",fontFamily:"Cairo,sans-serif",direction:"rtl"}}>
+
+                  {step==="plans" && (
+                    <div style={{padding:"22px 15px 30px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+                        <div style={{fontWeight:800,fontSize:17}}>💳 اختار الباقة</div>
+                        <button onClick={()=>setShowPay(false)} style={{background:C.surface,border:"none",color:C.text,borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:15}}>✕</button>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:13}}>
+                        {plans.map(p=>(
+                          <div key={p.id} onClick={()=>setPlan(p)} style={{background:plan?.id===p.id?`${p.color}22`:C.surface,border:`2px solid ${plan?.id===p.id?p.color:"rgba(255,255,255,0.08)"}`,borderRadius:17,padding:15,cursor:"pointer",position:"relative"}}>
+                            {p.popular && <div style={{position:"absolute",top:-9,left:15,background:p.color,color:"#000",fontSize:9,fontWeight:700,borderRadius:19,padding:"2px 11px"}}>الأكثر طلباً</div>}
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:7}}>
+                              <div>
+                                <div style={{fontWeight:800,fontSize:14}}>{p.name}</div>
+                                <div style={{color:C.muted,fontSize:11,marginTop:2}}>{p.desc}</div>
+                              </div>
+                              <div style={{textAlign:"left"}}>
+                                <div style={{color:p.color,fontWeight:800,fontSize:19}}>{p.price} <span style={{fontSize:10}}>درهم</span></div>
+                                <div style={{color:C.muted,fontSize:9}}>{p.duration}</div>
+                              </div>
+                            </div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                              {p.features.map(f=><span key={f} style={{background:`${p.color}22`,color:p.color,borderRadius:19,padding:"2px 9px",fontSize:10}}>✓ {f}</span>)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={()=>plan && setStep("card")} style={{width:"100%",marginTop:18,background:plan?`linear-gradient(135deg,${C.primary},#ff8c5a)`:C.surface,border:"none",color:plan?"#fff":C.muted,borderRadius:13,padding:15,fontSize:14,fontWeight:700,cursor:plan?"pointer":"not-allowed",fontFamily:"Cairo,sans-serif"}}>
+                        {plan?`ادفع ${plan.price} درهم →`:"اختار باقة أولاً"}
+                      </button>
+                    </div>
+                  )}
+
+                  {step==="card" && (
+                    <div style={{padding:"22px 15px 30px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:18}}>
+                        <button onClick={()=>setStep("plans")} style={{background:C.surface,border:"none",color:C.text,borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:15}}>←</button>
+                        <div style={{fontWeight:800,fontSize:17}}>💳 بيانات البطاقة</div>
+                      </div>
+                      <div style={{background:`linear-gradient(135deg,${C.card},${plan?.color||C.primary}88)`,borderRadius:18,padding:"18px 20px",color:"#fff",minHeight:130,marginBottom:22,boxShadow:"0 18px 36px rgba(0,0,0,0.4)"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:21}}>
+                          <div style={{fontSize:12,opacity:0.7}}>دار ليك Pay</div>
+                          <div style={{fontSize:22}}>💳</div>
+                        </div>
+                        <div style={{fontFamily:"monospace",fontSize:16,letterSpacing:3,marginBottom:14}}>{(card.number||"#### #### #### ####")}</div>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,opacity:0.8}}>
+                          <div>{card.name||"الاسم على البطاقة"}</div>
+                          <div>{card.expiry||"MM/YY"}</div>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:11}}>
+                        <div>
+                          <label style={{fontSize:11,color:C.muted,display:"block",marginBottom:5}}>رقم البطاقة</label>
+                          <input maxLength={19} placeholder="1234 5678 9012 3456" value={card.number}
+                            onChange={e=>{const v=e.target.value.replace(/\D/g,"").replace(/(.{4})/g,"$1 ").trim();setCard({...card,number:v});}}
+                            style={{width:"100%",background:C.surface,border:"1px solid rgba(255,255,255,0.1)",borderRadius:11,padding:"11px 13px",color:C.text,fontSize:14,fontFamily:"monospace",outline:"none",boxSizing:"border-box",letterSpacing:2}}/>
+                        </div>
+                        <div>
+                          <label style={{fontSize:11,color:C.muted,display:"block",marginBottom:5}}>الاسم على البطاقة</label>
+                          <input placeholder="Mohammed Amine" value={card.name} onChange={e=>setCard({...card,name:e.target.value})}
+                            style={{width:"100%",background:C.surface,border:"1px solid rgba(255,255,255,0.1)",borderRadius:11,padding:"11px 13px",color:C.text,fontSize:12,fontFamily:"Cairo,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                        </div>
+                        <div style={{display:"flex",gap:11}}>
+                          <div style={{flex:1}}>
+                            <label style={{fontSize:11,color:C.muted,display:"block",marginBottom:5}}>تاريخ الانتهاء</label>
+                            <input placeholder="MM/YY" maxLength={5} value={card.expiry}
+                              onChange={e=>{let v=e.target.value.replace(/\D/g,"");if(v.length>=2)v=v.slice(0,2)+"/"+v.slice(2);setCard({...card,expiry:v});}}
+                              style={{width:"100%",background:C.surface,border:"1px solid rgba(255,255,255,0.1)",borderRadius:11,padding:"11px 13px",color:C.text,fontSize:14,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/>
+                          </div>
+                          <div style={{flex:1}}>
+                            <label style={{fontSize:11,color:C.muted,display:"block",marginBottom:5}}>CVV</label>
+                            <input placeholder="123" maxLength={3} type="password" value={card.cvv} onChange={e=>setCard({...card,cvv:e.target.value.replace(/\D/g,"")})}
+                              style={{width:"100%",background:C.surface,border:"1px solid rgba(255,255,255,0.1)",borderRadius:11,padding:"11px 13px",color:C.text,fontSize:14,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{background:`${C.success}18`,border:`1px solid ${C.success}44`,borderRadius:11,padding:"9px 13px",marginTop:13,display:"flex",gap:7,alignItems:"center"}}>
+                        <span style={{fontSize:16}}>🔒</span>
+                        <span style={{fontSize:10,color:C.success}}>معلوماتك محمية بتشفير SSL 256-bit</span>
+                      </div>
+                      <button onClick={()=>setStep("confirm")} style={{width:"100%",marginTop:14,background:`linear-gradient(135deg,${C.primary},#ff8c5a)`,border:"none",color:"#fff",borderRadius:13,padding:15,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Cairo,sans-serif"}}>التالي →</button>
+                    </div>
+                  )}
+
+                  {step==="confirm" && (
+                    <div style={{padding:"22px 15px 30px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:22}}>
+                        <button onClick={()=>setStep("card")} style={{background:C.surface,border:"none",color:C.text,borderRadius:"50%",width:30,height:30,cursor:"pointer",fontSize:15}}>←</button>
+                        <div style={{fontWeight:800,fontSize:17}}>✅ تأكيد الدفع</div>
+                      </div>
+                      <div style={{background:C.surface,borderRadius:15,padding:15,marginBottom:15}}>
+                        <div style={{fontWeight:700,marginBottom:11,color:C.muted,fontSize:11}}>ملخص الطلب</div>
+                        {[["الباقة",plan?.name],["المدة",plan?.duration],["البطاقة",`**** **** **** ${card.number.slice(-4)||"****"}`],["الاسم",card.name||"—"]].map(([k,v])=>(
+                          <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+                            <span style={{color:C.muted,fontSize:12}}>{k}</span>
+                            <span style={{fontSize:12,fontWeight:600}}>{v}</span>
+                          </div>
+                        ))}
+                        <div style={{display:"flex",justifyContent:"space-between",padding:"11px 0 0"}}>
+                          <span style={{fontWeight:700,fontSize:14}}>المجموع</span>
+                          <span style={{color:C.primary,fontWeight:800,fontSize:17}}>{plan?.price} درهم</span>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",gap:9,justifyContent:"center",marginBottom:15}}>
+                        {["💳 Visa","💳 Mastercard","🏦 CMI"].map(c=><div key={c} style={{background:C.surface,borderRadius:7,padding:"5px 11px",fontSize:10,color:C.muted}}>{c}</div>)}
+                      </div>
+                      <button onClick={()=>{setProcessing(true);setTimeout(()=>{setProcessing(false);setStep("success");},2500);}}
+                        style={{width:"100%",background:processing?C.surface:`linear-gradient(135deg,${C.success},#38b2ac)`,border:"none",color:"#fff",borderRadius:13,padding:15,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Cairo,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                        {processing?<>⏳ جارِ المعالجة...</>:<>🔒 ادفع {plan?.price} درهم</>}
+                      </button>
+                    </div>
+                  )}
+
+                  {step==="success" && (
+                    <div style={{padding:"38px 15px 38px",textAlign:"center"}}>
+                      <div style={{fontSize:68,marginBottom:15}}>🎉</div>
+                      <div style={{fontWeight:800,fontSize:21,marginBottom:7}}>تم الدفع بنجاح!</div>
+                      <div style={{color:C.muted,fontSize:13,marginBottom:22}}>تم تفعيل باقة <span style={{color:plan?.color,fontWeight:700}}>{plan?.name}</span></div>
+                      <div style={{background:C.surface,borderRadius:15,padding:15,marginBottom:22,textAlign:"right"}}>
+                        <div style={{color:C.muted,fontSize:11,marginBottom:7}}>رقم المعاملة</div>
+                        <div style={{fontFamily:"monospace",fontSize:12,color:C.success}}>#DAR{Math.random().toString(36).slice(2,10).toUpperCase()}</div>
+                      </div>
+                      <button onClick={()=>{setShowPay(false);setStep("plans");setPlan(null);setCard({number:"",name:"",expiry:"",cvv:""});}}
+                        style={{width:"100%",background:`linear-gradient(135deg,${C.primary},#ff8c5a)`,border:"none",color:"#fff",borderRadius:13,padding:15,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Cairo,sans-serif"}}>
+                        رجع للتطبيق 🏠
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* NAV */}
+            <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:390,background:C.surface,borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",justifyContent:"space-around",padding:"9px 0 14px",zIndex:100}}>
+              {[["🏠","home","الرئيسية"],["💬","messages","الرسائل"],["➕","add","نشر"],["❤️","saved","محفوظة"],["👤","profile","حسابي"]].map(([ic,t,lb])=>(
+                <button key={t} onClick={()=>setTab(t)} style={{background:"none",border:"none",color:tab===t?C.primary:C.muted,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,fontFamily:"Cairo,sans-serif"}}>
+                  <span style={{fontSize:t==="add"?26:21}}>{ic}</span>
+                  <span style={{fontSize:9}}>{lb}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Frame>
+      );
+    }
+
+    function Frame({children}) {
+      return (
+        <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{width:"100%",maxWidth:390,height:"85vh",background:"#1A1A2E",borderRadius:36,overflow:"hidden",boxShadow:"0 36px 72px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.1)",display:"flex",flexDirection:"column"}}>
+            <div style={{background:"#0F3460",padding:"9px 18px",display:"flex",justifyContent:"space-between",fontSize:11,color:"#8B9BB4"}}>
+              <span>9:41</span><span>●●● WiFi 🔋</span>
+            </div>
+            <div style={{flex:1,overflowY:"auto"}}>{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js");}</script>
+</body>
+</html>
